@@ -1,0 +1,6 @@
+board:
+  name: l_evk_nrf54l15
+  full_name: L-EVK-NRF54L15
+  vendor: others
+  socs:
+    - name: nrf54l15
