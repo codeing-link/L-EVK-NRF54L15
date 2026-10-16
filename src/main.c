@@ -1,4 +1,4 @@
-/* L-EVK-NRF54L15: LEDs P0.02/P0.03 and UART30 TX=P0.00 RX=P0.01. */
+/* L-EVK-NRF54L15: LEDs P0.02/P0.03 and UART30 TX=P0.01 RX=P0.00. */
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
@@ -40,7 +40,7 @@ int main(void)
 		}
 	}
 
-	printk("L-EVK-NRF54L15 UART30: TX=P0.00 RX=P0.01, 115200 8N1\\r\\n");
+	printk("L-EVK-NRF54L15 UART30: TX=P0.01 RX=P0.00, 115200 8N1\\r\\n");
 
 	while (true) {
 		for (size_t i = 0; i < ARRAY_SIZE(leds); i++) {
