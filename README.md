@@ -2,9 +2,11 @@
 
 L-EVK-NRF54L15 是基于 Nordic nRF54L15 的 Zephyr/NCS 应用工程。应用仓库同时保存
 自定义 board、LED、UART、LIS2DW12TR、GH3220、MCUboot 和 Bluetooth LE OTA 配置，
-不需要修改 NCS 自带的 `zephyr/boards`。
+不需要修改 NCS 自带的 `zephyr/boards`。GH3220 SDK、OSAL 和业务框架保存在 NCS 工作区
+的 `modules/lierda`，应用通过 `ZEPHYR_EXTRA_MODULES` 引用，不修改供应商模块源码。
 
-本工程已在 NCS v3.4.1 环境完成 sysbuild 编译验证。
+本工程已在 NCS v3.4.1、Zephyr 4.4.2、GCC 14.3 环境完成 sysbuild 链接验证；供应商
+提供的 GCC 12.2 预编译算法库可在该工具链下正常链接。
 
 ## 硬件配置
 
@@ -39,10 +41,14 @@ L-EVK-NRF54L15/
 │           ├── l_evk_nrf54l15_nrf54l15_cpuapp.yaml
 │           └── l_evk_nrf54l15_nrf54l15_cpuapp_defconfig
 ├── dts/
+├── scripts/
+│   └── update_lierda_modules.py
 ├── src/
 ├── sysbuild/
 ├── CMakeLists.txt
 ├── build.sh
+├── modules.lock.yml
+├── update-modules.sh
 └── prj.conf
 ```
 
@@ -66,6 +72,7 @@ cd <ncs-workspace>/ncs
 mkdir -p apps
 git clone <仓库地址> apps/L-EVK-NRF54L15
 cd apps/L-EVK-NRF54L15
+./update-modules.sh
 PRISTINE=always ./build.sh
 ```
 
@@ -80,6 +87,7 @@ PRISTINE=always ./build.sh
 cd <ncs-workspace>/ncs/apps/L-EVK-NRF54L15
 git status
 git pull --ff-only
+./update-modules.sh
 ```
 
 如果更新包含 `boards/`、`app.overlay`、`prj.conf`、`sysbuild/` 或分区修改，执行：
@@ -94,9 +102,38 @@ PRISTINE=always ./build.sh
 ./build.sh
 ```
 
-`git pull` 更新本应用及其 board；`west update` 更新 NCS manifest 中管理的 SDK 模块，
-两者用途不同。只有切换 NCS 版本或 manifest 发生变化时才需要在 NCS 工作区执行
-`west update`。
+`git pull` 更新本应用及其 board；`west update` 更新 Nordic 主 manifest 管理的 SDK 模块；
+`./update-modules.sh` 更新立尔达/汇顶业务模块。三者用途不同。
+
+## Lierda 模块管理
+
+模块更新入口是：
+
+```bash
+cd <ncs-workspace>/ncs/apps/L-EVK-NRF54L15
+./update-modules.sh
+```
+
+脚本先更新 `modules/lierda/l-evk-t2-gh3220` 的远端默认分支，再读取该仓库最新的
+`west.yml`。因此 `gh3220_sdk`、`os_adapter`、`core_framework`、`factory` 的仓库地址、
+分支、标签或提交以后发生变化时，以最新 manifest 为准，不需要同步修改脚本。脚本会：
+
+- 将业务仓库克隆或快进更新到 `<ncs-workspace>/ncs/modules/lierda`；
+- 明确跳过 `l-evk-t2-nrf54l15`，始终使用本应用自带的 board；
+- 在任一供应商仓库存在未提交修改时停止，避免覆盖本地代码；
+- 不自动删除已经从 manifest 移除的旧目录；
+- 生成 `modules.lock.yml`，记录本次实际使用的 URL、revision 和 commit。
+
+`factory` 会被下载并记录版本，但当前依赖 GH3036，未加入 `ZEPHYR_EXTRA_MODULES`，因此
+不会进入本工程构建。不要直接修改 `modules/lierda`；产品差异、蓝牙整合和 board 适配均
+放在本应用仓库。每次确认模块升级可用后，应把更新后的 `modules.lock.yml` 与应用修改
+一起提交，便于复现和回退。
+
+更新模块或 manifest 后必须执行：
+
+```bash
+PRISTINE=always ./build.sh
+```
 
 ## 修改和制作 board
 
@@ -129,6 +166,7 @@ build/dfu_application.zip
 首次有线烧写必须同时写入 MCUboot 和已签名应用。具体步骤见：
 
 - [完整构建与运行说明](doc/README.md)
+- [工程架构与模块来源](doc/ARCHITECTURE.md)
 - [构建和烧写](doc/BUILD_FLASH.md)
 - [Bluetooth LE OTA](doc/BLE_OTA.md)
 - [传感器接口](doc/SENSORS.md)

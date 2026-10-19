@@ -25,7 +25,8 @@
 #define LIS2DW12_GAIN_UG_PER_LSB   244LL
 #define SENSOR_G_UM_S2             9806650LL
 
-LOG_MODULE_REGISTER(l_evk_imu, LOG_LEVEL_INF);
+/* Runtime filtering is selected centrally by L_EVK_LOG_LEVEL in main.c. */
+LOG_MODULE_REGISTER(l_evk_imu, LOG_LEVEL_DBG);
 
 static const struct i2c_dt_spec imu_i2c =
 	I2C_DT_SPEC_GET(DT_NODELABEL(lis2dw12));
@@ -138,7 +139,7 @@ void l_evk_imu_log_sample(void)
 	x = raw_to_um_s2(raw[0]);
 	y = raw_to_um_s2(raw[1]);
 	z = raw_to_um_s2(raw[2]);
-	LOG_INF("ACC[m/s2] X=%c%llu.%03llu Y=%c%llu.%03llu Z=%c%llu.%03llu",
+	LOG_DBG("ACC[m/s2] X=%c%llu.%03llu Y=%c%llu.%03llu Z=%c%llu.%03llu",
 		x < 0 ? '-' : '+', (unsigned long long)(absolute_value(x) / 1000000U),
 		(unsigned long long)((absolute_value(x) % 1000000U) / 1000U),
 		y < 0 ? '-' : '+', (unsigned long long)(absolute_value(y) / 1000000U),

@@ -7,8 +7,8 @@
 | --- | --- |
 | LED0 / LED1 | P0.02 / P0.03，高电平点亮、同步每 1000 ms 翻转 |
 | 串口 | UART30，TX=P0.01、RX=P0.00，115200 8N1，无流控 |
-| IMU | LIS2DW12TR，TWIM20：SCL=P1.03、SDA=P1.06、100 kHz；三轴加速度串口日志 |
-| PPG | GH3220，SPI21：SCK=P1.12、MOSI=P1.13、MISO=P1.10、CS=P1.11；仅底层初始化 |
+| IMU | LIS2DW12TR，TWIM20：SCL=P1.03、SDA=P1.06、100 kHz；每秒采样，DBG 等级输出三轴加速度 |
+| PPG | GH3220，SPI21：SCK=P1.12、MOSI=P1.13、MISO=P1.10、CS=P1.11；SDK、算法、健康框架和 BLE 协议完整接入 |
 
 ## L-EVK 最小硬件配置
 
@@ -20,6 +20,7 @@ LE Radio；MCUboot 与应用共用明确的内部 RRAM OTA 分区。
 ## 文档索引
 
 - [传感器接口说明](SENSORS.md)：LIS2DW12TR 三轴日志、GH3220 底层接口、完整管脚定义与硬件验证。
+- [工程架构与模块来源](ARCHITECTURE.md)：软件分层、启动与数据流、实际使用的 Lierda/Goodix 仓库及版本管理方式。
 - [构建与有线烧写](BUILD_FLASH.md)：首次全新构建、日常构建、版本号和 DAPLink 烧写。
 - [Bluetooth LE OTA](BLE_OTA.md)：MCUmgr SMP 升级包、手机升级步骤、回滚和安全注意事项。
 
@@ -40,12 +41,15 @@ LE Radio；MCUboot 与应用共用明确的内部 RRAM OTA 分区。
 ```bash
 cd <ncs-workspace>/ncs
 mkdir -p apps
-git clone <GitHub-仓库地址> apps/L-EVK-NRF54L15
+git clone <应用仓库地址> apps/L-EVK-NRF54L15
 cd apps/L-EVK-NRF54L15
+./update-modules.sh
 ```
 
-将 `<GitHub-仓库地址>` 替换为本工程的 GitHub Clone URL。若克隆到其他位置，
-`build.sh` 将无法按相对路径发现 NCS 环境。
+将 `<应用仓库地址>` 替换为本工程的 Clone URL。`update-modules.sh` 会把参考应用及其
+`west.yml` 中声明的 Lierda/Goodix 业务模块同步到 `<ncs-workspace>/ncs/modules/lierda`，
+并更新 `modules.lock.yml`。若应用克隆到其他位置，`build.sh` 将无法按相对路径发现 NCS
+环境。
 
 ## 构建
 
@@ -105,9 +109,13 @@ PRISTINE=always ./build.sh && ./flash_daplink.sh
 串口以 115200、8N1 打开，预期日志包含：
 
 ```text
+<inf> l_evk_blinky: Reset cause: raw=0x........
 <inf> l_evk_blinky: L-EVK-NRF54L15 started
 <inf> l_evk_imu: LIS2DW12TR ready: TWIM20 SCL=P1.03 SDA=P1.06, 100 kHz, ODR=25 Hz, +/-2 g
-<inf> l_evk_smp_bt: BLE OTA advertising started: L-EVK-NRF54L15
+<inf> l_evk_blinky: GH3220 health framework started
+<inf> gh3220_ble: BLE advertising started with SMP and GH3220 services
 ```
 
-此时 P0.02、P0.03 对应 LED 同步闪烁，串口每秒输出一次三轴加速度。
+此时 P0.02、P0.03 对应 LED 同步闪烁。默认 `LOG_LEVEL_INF` 不打印 LED 状态和每秒
+三轴加速度；将 `src/main.c` 中的 `L_EVK_LOG_LEVEL` 改为 `LOG_LEVEL_DBG` 后才会输出
+这两类周期调试信息。该开关同时控制应用、IMU 和 GH3220 的 Zephyr 日志模块。

@@ -9,6 +9,7 @@
 
 ```bash
 cd ncs/apps/L-EVK-NRF54L15
+./update-modules.sh
 PRISTINE=always ./build.sh && ./flash_daplink.sh
 ```
 
@@ -21,6 +22,10 @@ PRISTINE=always ./build.sh && ./flash_daplink.sh
 ```bash
 ./build.sh && ./flash_daplink.sh
 ```
+
+如果 `l-evk-t2-gh3220` 的 `west.yml` 或供应商模块有更新，先运行
+`./update-modules.sh`，检查 `modules.lock.yml` 的提交变化，再使用
+`PRISTINE=always ./build.sh` 完整构建。
 
 `build.sh` 会更新 `build/`，`flash_daplink.sh` 也只烧写 `build/` 中的 MCUboot 与已签名
 应用，因此两个镜像始终来自同一次构建，不会混淆目录。

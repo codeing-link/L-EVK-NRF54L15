@@ -9,6 +9,16 @@ BOARD="${BOARD:-l_evk_nrf54l15/nrf54l15/cpuapp}"
 BUILD_DIR="${BUILD_DIR:-${SCRIPT_DIR}/build}"
 PRISTINE="${PRISTINE:-auto}"
 WEST_BUILD_ARGS=()
+LIERDA_MODULE_ROOT="${NCS_ROOT}/modules/lierda"
+LIERDA_MODULES=(gh3220_sdk os_adapter core_framework)
+
+for module in "${LIERDA_MODULES[@]}"; do
+	module_path="${LIERDA_MODULE_ROOT}/${module}"
+	if [[ ! -d "${module_path}" ]]; then
+		echo "Error: missing ${module_path}; run ./update-modules.sh first." >&2
+		exit 2
+	fi
+done
 
 # Keep a custom build directory explicit and reusable by flash.sh. Remaining
 # arguments are forwarded to CMake after the application-local BOARD_ROOT.

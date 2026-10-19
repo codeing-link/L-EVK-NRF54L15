@@ -36,20 +36,6 @@
 		};
 	};
 
-	l_evk_sensor_controls {
-		compatible = "gpio-keys";
-
-		l_evk_ppg_reset: ppg_reset {
-			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
-			label = "PPG_RST (P1.09)";
-		};
-
-		l_evk_ppg_int: ppg_int {
-			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
-			label = "PPG_INT (P1.14)";
-		};
-	};
-
 	aliases {
 		led0 = &l_evk_led0;
 		led1 = &l_evk_led1;
@@ -133,10 +119,19 @@
 
 &spi21 {
 	status = "okay";
-	cs-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi21_default>;
 	pinctrl-1 = <&spi21_sleep>;
 	pinctrl-names = "default", "sleep";
+
+	gh3220: gh3220@0 {
+		compatible = "goodix,gh3220";
+		reg = <0>;
+		spi-max-frequency = <4000000>;
+		cs-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+		int-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
 };
 
 &nfct {

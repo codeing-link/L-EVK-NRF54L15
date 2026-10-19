@@ -48,7 +48,7 @@ cd ncs/apps/L-EVK-NRF54L15
 PRISTINE=always ./build.sh && ./flash_daplink.sh
 ```
 
-成功启动后，检查串口中的 `BLE OTA advertising started` 日志，确认手机能扫描到
+成功启动后，检查串口中的 `BLE advertising started with SMP and GH3220 services` 日志，确认手机能扫描到
 `L-EVK-NRF54L15`。
 
 ## 4. 生成一个可升级版本
@@ -132,7 +132,7 @@ build/L-EVK-NRF54L15/zephyr/zephyr.signed.bin
 
 | 现象 | 检查方式 |
 | --- | --- |
-| 手机扫描不到设备 | 观察串口是否有 `BLE OTA advertising started`；确认未被另一台手机保持连接；复位设备后重试。 |
+| 手机扫描不到设备 | 观察串口是否有 `BLE advertising started with SMP and GH3220 services`；确认未被另一台手机保持连接；复位设备后重试。 |
 | 上传时断开 | 缩短手机距离、保证供电、关闭其他蓝牙连接；设备断开后会重新广播。 |
 | 工具拒绝镜像 | nRF Device Manager 优先选择 `dfu_application.zip`；命令行客户端选择 `zephyr.signed.bin`；检查镜像未超过 696 KiB 槽位并采用相同 MCUboot 签名链。 |
 | 重启后仍是旧版本 | 新镜像可能未被标记 test/confirmed，或启动验证失败；使用 image list 检查状态，保留串口 MCUboot 日志。 |
