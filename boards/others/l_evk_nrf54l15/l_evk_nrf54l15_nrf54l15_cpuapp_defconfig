@@ -1,2 +1,0 @@
-# Enable the nRF54L15 application-core baseline required by this board.
-CONFIG_ARM_MPU=y

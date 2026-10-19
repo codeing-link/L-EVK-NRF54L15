@@ -1,0 +1,40 @@
+/*
+ * NCS SMP server-compatible layout for nRF54L15 internal RRAM.
+ * Included explicitly by both the application and sysbuild's MCUboot image.
+ *
+ * This file intentionally does not use the boards/<board>.overlay name: that
+ * name is auto-selected by Zephyr and would replace app.overlay.
+ */
+
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+
+&cpuapp_rram {
+	partitions {
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(68)>;
+		};
+
+		slot0_partition: partition@11000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x11000 DT_SIZE_K(696)>;
+		};
+
+		slot1_partition: partition@bf000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0xbf000 DT_SIZE_K(696)>;
+		};
+
+		storage_partition: partition@16d000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x16d000 DT_SIZE_K(64)>;
+		};
+	};
+};

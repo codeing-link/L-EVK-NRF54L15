@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Flash through the DAPLink probe attached to the Ubuntu host.
+# Flash through a DAPLink probe connected to the Ubuntu NCS host.
 
 set -euo pipefail
 

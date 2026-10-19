@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Flash the built image through DAPLink using PyOCD.
+# Flash a complete MCUboot + application installation through DAPLink/PyOCD.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 NCS_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
-IMAGE="${1:-${SCRIPT_DIR}/build/L-EVK-NRF54L15/zephyr/zephyr.bin}"
+BUILD_DIR="${SCRIPT_DIR}/build"
+BOOTLOADER_IMAGE="${BUILD_DIR}/mcuboot/zephyr/zephyr.hex"
+APPLICATION_IMAGE="${BUILD_DIR}/L-EVK-NRF54L15/zephyr/zephyr.signed.hex"
 TARGET="${PYOCD_TARGET:-nrf54l}"
 FREQUENCY="${PYOCD_FREQUENCY:-1000000}"
 
@@ -23,16 +25,33 @@ else
 	exit 127
 fi
 
-if [[ ! -f "${IMAGE}" ]]; then
-	echo "Error: firmware image not found: ${IMAGE}" >&2
-	exit 1
+if [[ $# -gt 0 ]]; then
+	echo "Error: flash_daplink.sh always flashes the canonical build/ output; no image path is accepted." >&2
+	exit 2
 fi
 
-echo "Mass-erasing ${TARGET} through DAPLink..."
+IMAGES=("${BOOTLOADER_IMAGE}" "${APPLICATION_IMAGE}")
+
+for image in "${IMAGES[@]}"; do
+	if [[ ! -f "${image}" ]]; then
+		echo "Canonical build/ output is incomplete; rebuilding it first." >&2
+		"${SCRIPT_DIR}/build.sh"
+		break
+	fi
+done
+
+for image in "${IMAGES[@]}"; do
+	if [[ ! -f "${image}" ]]; then
+		echo "Error: firmware image not found after build: ${image}" >&2
+		exit 1
+	fi
+done
+
+echo "Flashing canonical build directory: ${BUILD_DIR}"
+echo "MCUboot image: ${BOOTLOADER_IMAGE}"
+echo "Application image: ${APPLICATION_IMAGE}"
 "${PYOCD[@]}" erase -t "${TARGET}" -f "${FREQUENCY}" --mass
-
-echo "Flashing ${IMAGE} at ${FREQUENCY} Hz..."
-"${PYOCD[@]}" flash -t "${TARGET}" "${IMAGE}" -f "${FREQUENCY}"
-
-echo "Resetting ${TARGET}..."
+for image in "${IMAGES[@]}"; do
+	"${PYOCD[@]}" flash -t "${TARGET}" "${image}" -f "${FREQUENCY}"
+done
 "${PYOCD[@]}" reset -t "${TARGET}"

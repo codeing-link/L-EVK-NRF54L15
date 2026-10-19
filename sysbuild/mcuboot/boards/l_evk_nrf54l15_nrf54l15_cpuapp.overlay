@@ -1,0 +1,9 @@
+/* Match MCUboot's partition map to the application's OTA slot layout. */
+
+#include "../../../dts/l_evk_ota_partitions.overlay"
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};

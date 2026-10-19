@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: l_evk_nrf54l15/nrf54l15/cpuapp
+name: L-EVK-NRF54L15
+vendor: lierda
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+sysbuild: true
+ram: 188
+flash: 1428
+supported:
+  - counter
+  - gpio
+  - i2c
+  - retained_mem
+  - spi
+  - watchdog

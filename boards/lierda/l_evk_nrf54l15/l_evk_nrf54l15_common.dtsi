@@ -1,0 +1,158 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "l_evk_nrf54l15-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
+		zephyr,boot-mode = &boot_mode0;
+	};
+
+	l_evk_leds: leds {
+		compatible = "gpio-leds";
+
+		l_evk_led0: led_0 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			label = "L-EVK LED0 (P0.02)";
+		};
+
+		l_evk_led1: led_1 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			label = "L-EVK LED1 (P0.03)";
+		};
+	};
+
+	l_evk_imu_controls {
+		compatible = "gpio-keys";
+
+		l_evk_imu_int: imu_int {
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			label = "ACC_INT (P1.04)";
+		};
+	};
+
+	l_evk_sensor_controls {
+		compatible = "gpio-keys";
+
+		l_evk_ppg_reset: ppg_reset {
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+			label = "PPG_RST (P1.09)";
+		};
+
+		l_evk_ppg_int: ppg_int {
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+			label = "PPG_INT (P1.14)";
+		};
+	};
+
+	aliases {
+		led0 = &l_evk_led0;
+		led1 = &l_evk_led1;
+		watchdog0 = &wdt30;
+	};
+};
+
+&cpuapp_sram {
+	status = "okay";
+};
+
+&grtc {
+	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11>;
+	child-owned-channels = <3 4 7 8 9 10 11>;
+	status = "okay";
+};
+
+&regulators {
+	status = "okay";
+};
+
+&vregmain {
+	status = "okay";
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&lfxo {
+	status = "okay";
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <17000>;
+};
+
+&hfxo {
+	status = "okay";
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <15000>;
+};
+
+&clock {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};
+
+&uart30 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart30_default>;
+	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c20 {
+	status = "okay";
+	compatible = "nordic,nrf-twim";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c20_default>;
+	pinctrl-1 = <&i2c20_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	lis2dw12: lis2dw12@19 {
+		compatible = "st,lis2dw12";
+		reg = <0x19>;
+		status = "okay";
+	};
+};
+
+&spi21 {
+	status = "okay";
+	cs-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi21_default>;
+	pinctrl-1 = <&spi21_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&nfct {
+	status = "disabled";
+};
+
+&radio {
+	status = "okay";
+};
+
+&gpregret1 {
+	status = "okay";
+
+	boot_mode0: boot_mode@0 {
+		compatible = "zephyr,retention";
+		status = "okay";
+		reg = <0x0 0x1>;
+	};
+};
