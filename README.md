@@ -90,7 +90,7 @@ git pull --ff-only
 ./update-modules.sh
 ```
 
-如果更新包含 `boards/`、`app.overlay`、`prj.conf`、`sysbuild/` 或分区修改，执行：
+如果更新包含 `boards/`、`prj.conf`、`sysbuild/` 或分区修改，执行：
 
 ```bash
 PRISTINE=always ./build.sh
@@ -129,6 +129,9 @@ cd <ncs-workspace>/ncs/apps/L-EVK-NRF54L15
 放在本应用仓库。每次确认模块升级可用后，应把更新后的 `modules.lock.yml` 与应用修改
 一起提交，便于复现和回退。
 
+供应商模块中发现的问题应在对应上游仓库单独修复。本工程不携带对 `modules/lierda`
+源码的本地修改；再次执行 `./update-modules.sh` 时，以供应商仓库和最新 `west.yml` 为准。
+
 更新模块或 manifest 后必须执行：
 
 ```bash
@@ -137,7 +140,8 @@ PRISTINE=always ./build.sh
 
 ## 修改和制作 board
 
-硬件定义应放在 `boards/lierda/l_evk_nrf54l15`，不要放回应用 `app.overlay`：
+硬件定义与固定 OTA 分区应放在 `boards/lierda/l_evk_nrf54l15`，应用不需要
+`app.overlay`：
 
 - `l_evk_nrf54l15-pinctrl.dtsi`：UART、I2C、SPI 的引脚复用和休眠状态。
 - `l_evk_nrf54l15_common.dtsi`：LED、传感器 GPIO、外设状态、时钟和供电配置。
@@ -172,6 +176,14 @@ build/dfu_application.zip
 - [传感器接口](doc/SENSORS.md)
 
 ## 发布注意事项
+
+GH3220 的 BLE 上报采用非阻塞、尽力发送策略。手机接收过慢导致 TX 队列满时，应用会
+丢弃新数据而不会阻塞传感器和算法线程；串口按 1、2、4、8……次的节奏输出累计丢包
+警告，断开连接时输出本次会话汇总。持续出现该警告时，应先检查手机处理速度、连接参数
+和采集数据率，而不是继续增大阻塞等待时间。
+
+LED 是非关键外设。任一路 LED 初始化或运行时 GPIO 操作失败时，该路会停用并打印一次
+错误，GH3220、IMU、BLE 和 OTA 仍继续运行。
 
 MCUboot 默认签名密钥只能用于开发调试。正式发布前必须替换为受控的产品私钥，并妥善
 保存私钥、升级包版本和对应的发布标签。

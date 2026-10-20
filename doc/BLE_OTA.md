@@ -20,8 +20,8 @@ Manager 手机流程优先上传本工程 sysbuild 生成的 `build/dfu_applicat
 `zephyr.signed.bin`；不要上传 `zephyr.bin`、`zephyr.hex` 或
 `zephyr.signed.hex`。
 
-`dts/l_evk_ota_partitions.overlay` 同时被应用与 MCUboot 显式引用，使用与 NCS
-`dfu/smp_svr` nRF54L15 DK 样例相同的内部 RRAM 分区：
+board 内的 `l_evk_nrf54l15_partition.dtsi` 定义应用与 MCUboot 共用的内部 RRAM
+分区，布局与 NCS `dfu/smp_svr` nRF54L15 DK 样例一致：
 
 | 区域 | 起始地址 | 大小 | 用途 |
 | --- | ---: | ---: | --- |
@@ -73,8 +73,9 @@ build/dfu_application.zip
 build/L-EVK-NRF54L15/zephyr/zephyr.signed.bin
 ```
 
-发布前建议保留该文件、源码提交号、版本号和生成日期。不要更改 `app.overlay` 中的
-槽位布局后再尝试给已部署设备做 OTA；分区布局变化应作为一次完整有线升级处理。
+发布前建议保留该文件、源码提交号、版本号和生成日期。不要更改 board 中
+`l_evk_nrf54l15_partition.dtsi` 的槽位布局后再尝试给已部署设备做 OTA；分区布局变化
+应作为一次完整有线升级处理。
 
 普通有线固件和 OTA 包均由同一次默认 `build/` 产生：有线烧写使用
 `zephyr.signed.hex`，nRF Device Manager 使用 `dfu_application.zip`，命令行或单镜像
@@ -134,6 +135,7 @@ build/L-EVK-NRF54L15/zephyr/zephyr.signed.bin
 | --- | --- |
 | 手机扫描不到设备 | 观察串口是否有 `BLE advertising started with SMP and GH3220 services`；确认未被另一台手机保持连接；复位设备后重试。 |
 | 上传时断开 | 缩短手机距离、保证供电、关闭其他蓝牙连接；设备断开后会重新广播。 |
+| 出现 `TX queue full` | GH3220 数据上报速度超过手机的 Notify 消费速度；固件会丢弃新包以保护传感器线程。检查手机处理速度、连接质量和采集数据率，丢包累计值按 1、2、4、8……限频输出。 |
 | 工具拒绝镜像 | nRF Device Manager 优先选择 `dfu_application.zip`；命令行客户端选择 `zephyr.signed.bin`；检查镜像未超过 696 KiB 槽位并采用相同 MCUboot 签名链。 |
 | 重启后仍是旧版本 | 新镜像可能未被标记 test/confirmed，或启动验证失败；使用 image list 检查状态，保留串口 MCUboot 日志。 |
 | 首次 OTA 无法启动 | 先用 `./flash_daplink.sh` 写入 MCUboot 与 `zephyr.signed.hex`。 |

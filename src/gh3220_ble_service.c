@@ -7,6 +7,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 #include <string.h>
 
 #include "gh3220_ble_service.h"
@@ -42,6 +43,7 @@ static struct k_spinlock connection_lock;
 static struct bt_conn *current_conn;
 static bool rx_notify_enabled;
 static uint32_t connection_session;
+static atomic_t tx_drop_count;
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -201,8 +203,9 @@ static int gh3220_ble_notify_now(const uint8_t *data, uint16_t len,
 		uint16_t mtu = bt_gatt_get_mtu(conn);
 		uint16_t chunk = MIN(len - offset, mtu - 3U);
 		for (int retry = 0; retry < GH3220_BLE_TX_RETRY_COUNT; retry++) {
-			err = bt_gatt_notify(conn, &gh3220_service.attrs[4],
-					     data + offset, chunk);
+			err = bt_gatt_notify_uuid(conn, &rx_uuid.uuid,
+						  gh3220_service.attrs,
+						  data + offset, chunk);
 			if (err != -ENOMEM && err != -EAGAIN) {
 				break;
 			}
@@ -242,6 +245,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	current_conn = bt_conn_ref(conn);
 	connection_session++;
 	k_spin_unlock(&connection_lock, key);
+	atomic_set(&tx_drop_count, 0);
 	gh3220_protocol_session_changed();
 	LOG_INF("GH3220 BLE connected");
 }
@@ -258,6 +262,10 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	k_spin_unlock(&connection_lock, key);
 	if (old_conn != NULL) {
 		bt_conn_unref(old_conn);
+	}
+	atomic_val_t dropped = atomic_get(&tx_drop_count);
+	if (dropped > 0) {
+		LOG_WRN("GH3220 BLE session dropped %ld TX packets", (long)dropped);
 	}
 	k_msgq_purge(&gh3220_ble_rx_msgq);
 	k_msgq_purge(&gh3220_ble_tx_msgq);
@@ -316,7 +324,27 @@ int gh3220_ble_notify(const uint8_t *data, uint16_t len)
 	packet.session = connection_session;
 	bool ready = current_conn != NULL && rx_notify_enabled;
 	k_spin_unlock(&connection_lock, key);
-	return ready ? k_msgq_put(&gh3220_ble_tx_msgq, &packet, K_MSEC(100)) : -ENOTCONN;
+	if (!ready) {
+		return -ENOTCONN;
+	}
+
+	/* This function is called while the GH3220 SDK mutex can be held. Never
+	 * wait for a slow BLE peer here, otherwise sensor and protocol processing
+	 * can be stalled by transport backpressure. The queue is best effort; a
+	 * power-of-two warning cadence keeps persistent congestion observable
+	 * without flooding the deferred log buffer.
+	 */
+	int err = k_msgq_put(&gh3220_ble_tx_msgq, &packet, K_NO_WAIT);
+	if (err != 0) {
+		uint32_t dropped = (uint32_t)atomic_inc(&tx_drop_count) + 1U;
+
+		if ((dropped & (dropped - 1U)) == 0U) {
+			LOG_WRN("GH3220 BLE TX queue full; dropped packets=%u", dropped);
+		}
+		return 0;
+	}
+
+	return 0;
 }
 
 bool gh3220_ble_is_connected(void)

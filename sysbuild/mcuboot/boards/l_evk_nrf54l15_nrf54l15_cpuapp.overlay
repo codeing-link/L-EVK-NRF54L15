@@ -1,6 +1,4 @@
-/* Match MCUboot's partition map to the application's OTA slot layout. */
-
-#include "../../../dts/l_evk_ota_partitions.overlay"
+/* MCUboot shares the board partition map but executes from boot_partition. */
 
 / {
 	chosen {

@@ -108,6 +108,7 @@ static const struct gpio_dt_spec leds[] = {
 int main(void)
 {
 	bool leds_on = false;
+	bool led_ready[ARRAY_SIZE(leds)] = { false };
 	int64_t next_imu_log_ms;
 	int ret;
 
@@ -117,14 +118,15 @@ int main(void)
 	for (size_t i = 0; i < ARRAY_SIZE(leds); ++i) {
 		if (!gpio_is_ready_dt(&leds[i])) {
 			LOG_ERR("LED%u GPIO controller is not ready", (unsigned int)i);
-			return 0;
+			continue;
 		}
 
 		ret = gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
 			LOG_ERR("Cannot configure LED%u: %d", (unsigned int)i, ret);
-			return 0;
+			continue;
 		}
+		led_ready[i] = true;
 	}
 
 	LOG_INF("L-EVK-NRF54L15 started");
@@ -149,16 +151,25 @@ int main(void)
 	next_imu_log_ms = k_uptime_get();
 
 	while (true) {
+		bool any_led_toggled = false;
+
 		for (size_t i = 0; i < ARRAY_SIZE(leds); ++i) {
+			if (!led_ready[i]) {
+				continue;
+			}
 			ret = gpio_pin_toggle_dt(&leds[i]);
 			if (ret != 0) {
 				LOG_ERR("Cannot toggle LED%u: %d", (unsigned int)i, ret);
-				return 0;
+				led_ready[i] = false;
+				continue;
 			}
+			any_led_toggled = true;
 		}
 
-		leds_on = !leds_on;
-		LOG_DBG("LED P0.02/P0.03: %s", leds_on ? "ON" : "OFF");
+		if (any_led_toggled) {
+			leds_on = !leds_on;
+			LOG_DBG("LED P0.02/P0.03: %s", leds_on ? "ON" : "OFF");
+		}
 		if (k_uptime_get() >= next_imu_log_ms) {
 			l_evk_imu_log_sample();
 			next_imu_log_ms += IMU_LOG_INTERVAL_MS;

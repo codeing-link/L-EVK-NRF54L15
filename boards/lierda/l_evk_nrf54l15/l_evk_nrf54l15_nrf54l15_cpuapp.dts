@@ -4,6 +4,8 @@
 
 #include <nordic/nrf54l15_cpuapp.dtsi>
 #include "l_evk_nrf54l15_common.dtsi"
+#include <vendor/nordic/nrf54l15_cpuapp_partition.dtsi>
+#include "l_evk_nrf54l15_partition.dtsi"
 
 / {
 	model = "L-EVK-NRF54L15";
@@ -14,5 +16,3 @@
 		zephyr,sram = &cpuapp_sram;
 	};
 };
-
-#include <vendor/nordic/nrf54l15_cpuapp_partition.dtsi>

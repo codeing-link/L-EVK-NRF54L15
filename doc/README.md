@@ -1,7 +1,8 @@
 # L-EVK-NRF54L15 使用文档
 
-本工程使用原生 `l_evk_nrf54l15/nrf54l15/cpuapp` 自定义板级目标。LED、串口和传感器总线位于
-应用仓库内的 `boards/lierda/l_evk_nrf54l15`，应用层 `app.overlay` 仅保留 MCUboot OTA 分区。
+本工程使用原生 `l_evk_nrf54l15/nrf54l15/cpuapp` 自定义板级目标。LED、串口、传感器总线
+和 MCUboot OTA 固定分区均位于应用仓库内的 `boards/lierda/l_evk_nrf54l15`，应用不再需要
+`app.overlay`。
 
 | 项目 | 配置 |
 | --- | --- |
@@ -116,6 +117,7 @@ PRISTINE=always ./build.sh && ./flash_daplink.sh
 <inf> gh3220_ble: BLE advertising started with SMP and GH3220 services
 ```
 
-此时 P0.02、P0.03 对应 LED 同步闪烁。默认 `LOG_LEVEL_INF` 不打印 LED 状态和每秒
+此时 P0.02、P0.03 对应 LED 同步闪烁。任一路 LED GPIO 不可用时，该路会被停用，但
+GH3220、IMU、Bluetooth 和 OTA 会继续运行。默认 `LOG_LEVEL_INF` 不打印 LED 状态和每秒
 三轴加速度；将 `src/main.c` 中的 `L_EVK_LOG_LEVEL` 改为 `LOG_LEVEL_DBG` 后才会输出
 这两类周期调试信息。该开关同时控制应用、IMU 和 GH3220 的 Zephyr 日志模块。

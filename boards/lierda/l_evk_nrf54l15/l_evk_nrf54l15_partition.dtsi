@@ -1,9 +1,10 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /*
- * NCS SMP server-compatible layout for nRF54L15 internal RRAM.
- * Included explicitly by both the application and sysbuild's MCUboot image.
+ * Product OTA layout for the nRF54L15 internal RRAM.
  *
- * This file intentionally does not use the boards/<board>.overlay name: that
- * name is auto-selected by Zephyr and would replace app.overlay.
+ * This file is included after Nordic's default partition description so the
+ * application and every sysbuild image share one board-owned partition map.
  */
 
 /delete-node/ &boot_partition;
